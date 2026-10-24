@@ -1,0 +1,15 @@
+# Melqart watchlist: products YOU run or protect.
+# One keyword per line, matched against the vendor and product names in
+# CISA's catalog. Not case sensitive. Lines starting with # are ignored.
+# Short words match broadly ("php" also matches "phpMyAdmin"); that's on
+# purpose: a false alarm is cheaper than a miss.
+
+# Punchbag lab (planned)
+php
+apache
+docker
+
+# Your PC and everyday software
+windows
+chrome
+node.js

@@ -1,0 +1,11 @@
+{
+  "status": "OK",
+  "status-code": 200,
+  "version": "TEST - fake scores in the real FIRST EPSS API format",
+  "total": 3,
+  "data": [
+    {"cve": "CVE-0000-00001", "epss": "0.912340000", "percentile": "0.998000000", "date": "2026-10-24"},
+    {"cve": "CVE-0000-00003", "epss": "0.021000000", "percentile": "0.810000000", "date": "2026-10-24"},
+    {"cve": "CVE-0000-00004", "epss": "0.450000000", "percentile": "0.985000000", "date": "2026-10-24"}
+  ]
+}

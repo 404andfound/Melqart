@@ -1,0 +1,73 @@
+{
+  "title": "TEST DATA - fake entries in the real CISA KEV format. Not real vulnerabilities.",
+  "catalogVersion": "TEST.0001",
+  "dateReleased": "2026-10-24T00:00:00.000Z",
+  "count": 5,
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-0000-00001",
+      "vendorProject": "PHP Group",
+      "product": "PHP",
+      "vulnerabilityName": "TEST PHP Remote Code Execution Vulnerability",
+      "dateAdded": "2026-10-22",
+      "shortDescription": "TEST: a flaw that lets an attacker without an account run code on the server.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2026-11-12",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": "https://example.invalid/php-advisory ; https://nvd.nist.gov/vuln/detail/CVE-0000-00001",
+      "cwes": ["CWE-787"]
+    },
+    {
+      "cveID": "CVE-0000-00002",
+      "vendorProject": "ExampleSoft",
+      "product": "Remote Support",
+      "vulnerabilityName": "TEST ExampleSoft Remote Support Command Injection Vulnerability",
+      "dateAdded": "2026-10-20",
+      "shortDescription": "TEST: an unauthenticated attacker can inject operating system commands.",
+      "requiredAction": "Apply mitigations per vendor instructions.",
+      "dueDate": "2026-11-10",
+      "knownRansomwareCampaignUse": "Known",
+      "notes": "",
+      "cwes": ["CWE-78"]
+    },
+    {
+      "cveID": "CVE-0000-00003",
+      "vendorProject": "MediaCo",
+      "product": "Media Server",
+      "vulnerabilityName": "TEST MediaCo Media Server Server-Side Request Forgery Vulnerability",
+      "dateAdded": "2026-10-19",
+      "shortDescription": "TEST: the server can be tricked into making requests on an attacker's behalf.",
+      "requiredAction": "Apply mitigations per vendor instructions.",
+      "dueDate": "2026-11-09",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": "",
+      "cwes": ["CWE-918"]
+    },
+    {
+      "cveID": "CVE-0000-00004",
+      "vendorProject": "RouterCorp",
+      "product": "Edge Firewall",
+      "vulnerabilityName": "TEST RouterCorp Edge Firewall Authentication Bypass Vulnerability",
+      "dateAdded": "2026-10-18",
+      "shortDescription": "TEST: attackers can log in to the management interface without a password.",
+      "requiredAction": "Apply mitigations per vendor instructions.",
+      "dueDate": "2026-11-08",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": "",
+      "cwes": ["CWE-287"]
+    },
+    {
+      "cveID": "CVE-0000-00005",
+      "vendorProject": "OldVendor",
+      "product": "Legacy App",
+      "vulnerabilityName": "TEST OldVendor Legacy App Path Traversal Vulnerability (outside the 7-day window)",
+      "dateAdded": "2026-10-01",
+      "shortDescription": "TEST: this entry is older than 7 days and must be filtered out.",
+      "requiredAction": "Apply mitigations per vendor instructions.",
+      "dueDate": "2026-10-22",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": "",
+      "cwes": []
+    }
+  ]
+}
