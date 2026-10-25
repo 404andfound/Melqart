@@ -12,8 +12,12 @@ Update this at the end of every session, before committing.
 - [x] v0.2: HTML briefing with one-line verdict, opens in browser,
       outside text escaped against XSS; 10 tests (2026-10-25)
 
+- [x] v0.2: automatic morning run via Windows Task Scheduler ("Melqart
+      Sentinel", daily 07:30, pythonw, runs at next login if PC was off);
+      test run returned 0 (2026-10-25)
+
 ## Next
-- [ ] v0.2: automatic morning run (Windows Task Scheduler)
+- [ ] Log file for scheduled runs (pythonw hides errors)
 - [ ] JP walkthrough of sentinel.py: can explain every function
 - [ ] v1: second source (vendor advisories / security news), since KEV lags
 - [ ] v1: Punchbag lab (isolated Docker, PHP app) + Scout (Nuclei scans of the lab only)
@@ -44,4 +48,5 @@ Update this at the end of every session, before committing.
 ## Last session
 2026-10-25: VS Code installed; real watchlist; Node.js and unofficial
 chatbot removed; v0.2 HTML briefing built and run live (green, quiet
-morning). Next: automatic morning run, then sentinel.py walkthrough.
+morning); scheduled daily run set up and verified. Next: sentinel.py
+walkthrough.
