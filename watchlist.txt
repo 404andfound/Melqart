@@ -1,15 +1,47 @@
-# Melqart watchlist: products YOU run or protect.
-# One keyword per line, matched against the vendor and product names in
-# CISA's catalog. Not case sensitive. Lines starting with # are ignored.
-# Short words match broadly ("php" also matches "phpMyAdmin"); that's on
-# purpose: a false alarm is cheaper than a miss.
+# Melqart watchlist: products JP actually runs (from winget list, 2026-10-25).
+# One keyword per line, matched against vendor + product names in CISA's
+# catalog. Not case sensitive. Lines starting with # are ignored.
+# Matching is by text, so a match means "check it", not "you are hit".
 
-# Punchbag lab (planned)
-php
-apache
-docker
-
-# Your PC and everyday software
+# Operating system and Microsoft software
 windows
-chrome
+microsoft office
+outlook
+.net
+visual studio code
+quick assist
+
+# Browser: Edge is built on Chromium, and CISA lists Chrome/Edge engine
+# flaws as "Google Chromium ..."
+chromium
+microsoft edge
+
+# Developer tools
+python
 node.js
+git
+anthropic
+
+# Messaging: these open files and links from other people
+whatsapp
+telegram
+discord
+
+# Hardware vendor software (drivers and control apps run with high rights)
+nvidia
+amd
+asus
+lenovo
+gigabyte
+
+# Gaming platforms
+blizzard
+overwolf
+
+# Preinstalled security add-on
+mcafee
+
+# Punchbag lab (planned): uncomment when the lab is built
+# php
+# apache
+# docker
