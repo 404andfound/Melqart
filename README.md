@@ -53,8 +53,16 @@ against your `watchlist.txt`, and sorts them into three levels:
 | **High** | Linked to ransomware, or EPSS ≥ 10% |
 | **Monitor** | Exploited somewhere, but not in your watchlist |
 
-Output: `reports/digest-YYYY-MM-DD.md` (for people) and `.json` (for the
-next agents).
+Output, in `reports/`:
+
+- `digest-YYYY-MM-DD.html`: a colored briefing that opens in your browser,
+  with a one-line verdict at the top (red: act now, orange: worth knowing,
+  green: quiet morning)
+- `digest-YYYY-MM-DD.md`: the same briefing as plain text
+- `digest-YYYY-MM-DD.json`: structured data for the next agents
+
+All text from outside sources is HTML-escaped before it reaches the page,
+so a malicious description in a feed can't run code in your browser (XSS).
 
 ### Run it on Windows
 
@@ -72,6 +80,7 @@ Useful options:
 python sentinel.py --days 14              # look back two weeks
 python sentinel.py --epss-threshold 0.05  # stricter "High" level
 python sentinel.py --no-epss              # skip EPSS scores
+python sentinel.py --no-open              # don't open the browser
 ```
 
 ### Test it without internet
@@ -98,6 +107,7 @@ formats, and reports built from them are marked TEST MODE.
 ## Roadmap
 
 - v0: Sentinel digest ✔
+- v0.2: HTML briefing ✔, automatic morning run
 - v1: Punchbag lab, Scout, Analyst
 - v2: Responder with approve-then-verify loop
 - v3: Scribe, NIS2-style reports, full write-up

@@ -11,8 +11,9 @@ What it does
     3. Adds an EPSS score from FIRST for each one: the estimated probability
        that the flaw will be exploited in the next 30 days.
     4. Flags entries that match products in your watchlist (what YOU run).
-    5. Ranks everything and writes two reports:
-         reports/digest-YYYY-MM-DD.md    for humans
+    5. Ranks everything and writes three reports:
+         reports/digest-YYYY-MM-DD.html  colored briefing, opens in your browser
+         reports/digest-YYYY-MM-DD.md    plain-text version
          reports/digest-YYYY-MM-DD.json  for the next Melqart agents
 
 Scope and ethics
@@ -26,14 +27,16 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import html
 import json
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+import webbrowser
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 EPSS_URL = "https://api.first.org/data/v1/epss"
 USER_AGENT = f"Melqart-Sentinel/{VERSION} (defensive research project)"
@@ -266,6 +269,162 @@ def render_markdown(meta: dict, findings: list[dict]) -> str:
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------------- HTML briefing
+#
+# Everything shown in the page comes from outside (CISA's catalog, FIRST's
+# scores, the watchlist). We treat it as untrusted: every value goes through
+# esc() before it lands in the HTML, so a vulnerability description containing
+# "<script>" is shown as text instead of being run by the browser.
+
+HTML_STYLE = """
+:root { --bg:#f6f5f2; --card:#ffffff; --text:#1d1d1f; --muted:#5f6368;
+        --line:#e3e1dc; --act:#c62828; --high:#d9730d; --monitor:#7a7f87;
+        --ok:#2e7d32; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#141416; --card:#1f1f23; --text:#ececee; --muted:#a0a3a9;
+          --line:#33343a; --act:#ef5350; --high:#f5a04a; --monitor:#9aa0a8;
+          --ok:#66bb6a; }
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text);
+       font:16px/1.5 "Segoe UI", system-ui, sans-serif; }
+main { max-width:860px; margin:0 auto; padding:24px 16px 48px; }
+header h1 { font-size:22px; margin:0; }
+header p { margin:2px 0 0; color:var(--muted); }
+.verdict { margin:20px 0; padding:16px 18px; border-radius:10px;
+           color:#fff; font-size:18px; font-weight:600; }
+/* Banner colors stay dark in both themes so the white text stays readable. */
+.verdict.act { background:#c62828; }
+.verdict.high { background:#b35900; }
+.verdict.ok { background:#2e7d32; }
+.tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.tile { background:var(--card); border:1px solid var(--line);
+        border-top:4px solid; border-radius:10px; padding:10px 14px; }
+.tile b { display:block; font-size:28px; }
+.tile.act { border-top-color:var(--act); }
+.tile.high { border-top-color:var(--high); }
+.tile.monitor { border-top-color:var(--monitor); }
+h2 { font-size:18px; margin:28px 0 4px; }
+h2 + p.why { margin:0 0 10px; color:var(--muted); font-size:14px; }
+.card { background:var(--card); border:1px solid var(--line);
+        border-left:5px solid; border-radius:10px; padding:14px 16px;
+        margin:10px 0; }
+.card.act { border-left-color:var(--act); }
+.card.high { border-left-color:var(--high); }
+.card.monitor { border-left-color:var(--monitor); }
+.card h3 { margin:0; font-size:16px; }
+.card .cve { color:var(--muted); font-weight:400; font-size:14px; }
+.card p { margin:6px 0; }
+.facts { display:flex; flex-wrap:wrap; gap:6px 16px; color:var(--muted);
+         font-size:14px; margin:8px 0; padding:0; list-style:none; }
+.match { font-weight:600; color:var(--act); }
+.action { font-size:14px; }
+.links a { font-size:14px; margin-right:12px; color:inherit; }
+details summary { cursor:pointer; font-weight:600; margin:28px 0 4px;
+                  font-size:18px; }
+.test { background:#6a1b9a; color:#fff; padding:8px 12px; border-radius:8px;
+        margin-top:16px; }
+footer { margin-top:36px; color:var(--muted); font-size:13px; }
+@media (max-width:560px) { .tiles { grid-template-columns:1fr; } }
+"""
+
+
+def esc(value) -> str:
+    """Make any value safe to place inside HTML."""
+    return html.escape(str(value), quote=True)
+
+
+def safe_link(url: str) -> str:
+    """Return a clickable link only for http(s) addresses, else plain text."""
+    if url.startswith(("https://", "http://")):
+        return f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{esc(url.split("/")[2])}</a>'
+    return esc(url)
+
+
+def verdict(counts: dict) -> tuple[str, str]:
+    """One plain-language sentence that answers: do I need to do anything?"""
+    act, high = counts[LEVEL_ACT_NOW], counts[LEVEL_HIGH]
+    if act:
+        word = "flaw affects" if act == 1 else "flaws affect"
+        return "act", f"{act} actively exploited {word} software you run. Act now."
+    if high:
+        word = "flaw" if high == 1 else "flaws"
+        return "high", (f"Nothing matches your software, but {high} high-risk "
+                        f"{word} are worth knowing about.")
+    return "ok", "Quiet morning. Nothing new affects software you run."
+
+
+def html_card(f: dict, css: str) -> str:
+    if f["epss"] is None:
+        chance = "Attack chance: not available"
+    else:
+        chance = f"{percent(f['epss'])} chance of attack within 30 days"
+    facts = [
+        f"Confirmed exploited: {esc(f['date_added'])}",
+        f"Ransomware use: {esc(f['ransomware_use'])}",
+        esc(chance),
+    ]
+    links = [f["nvd_url"]] + [u for u in note_links(f["notes"]) if u != f["nvd_url"]]
+    parts = [
+        f'<article class="card {css}">',
+        f'<h3>{esc(f["vendor"])} {esc(f["product"])} '
+        f'<span class="cve">{esc(f["cve"])}</span></h3>',
+        f'<p>{esc(f["summary"])}</p>',
+        '<ul class="facts">' + "".join(f"<li>{x}</li>" for x in facts) + "</ul>",
+    ]
+    if f["watchlist_hits"]:
+        parts.append(f'<p class="match">On your watchlist: '
+                     f'{esc(", ".join(f["watchlist_hits"]))}</p>')
+    parts.append(f'<p class="action"><b>What to do:</b> {esc(f["required_action"])}</p>')
+    parts.append('<p class="links">' + "".join(safe_link(u) for u in links) + "</p>")
+    parts.append("</article>")
+    return "\n".join(parts)
+
+
+def render_html(meta: dict, findings: list[dict]) -> str:
+    counts = {level: sum(f["level"] == level for f in findings) for level in LEVEL_ORDER}
+    css_of = {LEVEL_ACT_NOW: "act", LEVEL_HIGH: "high", LEVEL_MONITOR: "monitor"}
+    tone, sentence = verdict(counts)
+    out = [
+        "<!doctype html>",
+        '<html lang="en"><head><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        f"<title>Melqart briefing {esc(meta['today'])}</title>",
+        f"<style>{HTML_STYLE}</style></head><body><main>",
+        "<header><h1>Melqart Sentinel briefing</h1>",
+        f"<p>{esc(meta['today'])} · new exploited vulnerabilities from the last "
+        f"{esc(meta['days'])} days</p></header>",
+    ]
+    if meta["test_mode"]:
+        out.append('<p class="test"><b>TEST MODE:</b> built from sample files, not live data.</p>')
+    out.append(f'<div class="verdict {tone}">{esc(sentence)}</div>')
+    out.append('<div class="tiles">' + "".join(
+        f'<div class="tile {css_of[level]}"><b>{counts[level]}</b>{esc(level)}</div>'
+        for level in LEVEL_ORDER) + "</div>")
+    for level in LEVEL_ORDER:
+        group = [f for f in findings if f["level"] == level]
+        if not group:
+            continue
+        cards = "\n".join(html_card(f, css_of[level]) for f in group)
+        if level == LEVEL_MONITOR:
+            # Not your software: folded away so it doesn't drown the important part.
+            out.append(f"<details><summary>{esc(level)} ({len(group)}): "
+                       f"{esc(LEVEL_REASON[level])}</summary>\n{cards}\n</details>")
+        else:
+            out.append(f"<h2>{esc(level)} ({len(group)})</h2>"
+                       f'<p class="why">{esc(LEVEL_REASON[level])}</p>\n{cards}')
+    out.append(
+        "<footer>"
+        f"<p>Source: CISA Known Exploited Vulnerabilities catalog, version "
+        f"{esc(meta['catalog_version'])}. Attack chance: {esc(meta['epss_status'])}.</p>"
+        f"<p>Watchlist: {esc(', '.join(meta['watchlist']) or 'empty')}</p>"
+        f"<p>Generated by Melqart Sentinel {esc(meta['sentinel_version'])}. "
+        "Reads public feeds only; scans and touches nothing.</p>"
+        "</footer></main></body></html>"
+    )
+    return "\n".join(out)
+
+
 def console_summary(meta: dict, findings: list[dict], paths: list[Path]) -> str:
     counts = {level: sum(f["level"] == level for f in findings) for level in LEVEL_ORDER}
     out = [
@@ -293,6 +452,8 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--epss-threshold", type=float, default=0.10,
                         help="EPSS score that counts as High (default 0.10 = 10%%)")
     parser.add_argument("--no-epss", action="store_true", help="skip EPSS scores")
+    parser.add_argument("--no-open", action="store_true",
+                        help="don't open the HTML briefing in the browser")
     parser.add_argument("--kev-file", type=Path, help="use a local KEV JSON file instead of downloading")
     parser.add_argument("--epss-file", type=Path, help="use a local EPSS JSON file instead of downloading")
     parser.add_argument("--today", type=dt.date.fromisoformat, default=dt.date.today(),
@@ -341,12 +502,16 @@ def run(argv: list[str] | None = None) -> int:
     }
 
     args.out.mkdir(parents=True, exist_ok=True)
+    html_path = args.out / f"digest-{meta['today']}.html"
     md_path = args.out / f"digest-{meta['today']}.md"
     json_path = args.out / f"digest-{meta['today']}.json"
+    html_path.write_text(render_html(meta, findings), encoding="utf-8")
     md_path.write_text(render_markdown(meta, findings), encoding="utf-8")
     json_path.write_text(json.dumps({"meta": meta, "findings": findings}, indent=2),
                          encoding="utf-8")
-    print(console_summary(meta, findings, [md_path, json_path]))
+    print(console_summary(meta, findings, [html_path, md_path, json_path]))
+    if not args.no_open:
+        webbrowser.open(html_path.resolve().as_uri())
     return 0
 
 

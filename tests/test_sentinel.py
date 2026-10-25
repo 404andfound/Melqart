@@ -64,6 +64,7 @@ class EndToEndTests(unittest.TestCase):
             code = sentinel.run([
                 "--kev-file", str(KEV), "--epss-file", str(EPSS),
                 "--watchlist", str(watch), "--out", tmp, "--today", "2026-10-24",
+                "--no-open",
             ])
             self.assertEqual(code, 0)
             data = json.loads((Path(tmp) / "digest-2026-10-24.json").read_text(encoding="utf-8"))
@@ -73,10 +74,49 @@ class EndToEndTests(unittest.TestCase):
             self.assertTrue(data["meta"]["test_mode"])
             markdown = (Path(tmp) / "digest-2026-10-24.md").read_text(encoding="utf-8")
             self.assertIn("TEST MODE", markdown)
+            page = (Path(tmp) / "digest-2026-10-24.html").read_text(encoding="utf-8")
+            self.assertIn("TEST MODE", page)
+            self.assertIn("Act now", page)
 
     def test_missing_kev_file_fails_cleanly(self):
         code = sentinel.run(["--kev-file", "does-not-exist.json", "--no-epss"])
         self.assertEqual(code, 2)
+
+
+class HtmlBriefingTests(unittest.TestCase):
+    def finding(self, **changes):
+        base = {
+            "cve": "CVE-0000-00009", "level": sentinel.LEVEL_MONITOR,
+            "vendor": "TestCo", "product": "TestApp", "name": "TEST",
+            "summary": "TEST summary", "date_added": "2026-10-24",
+            "cisa_due_date": "2026-11-14", "required_action": "Patch it.",
+            "ransomware_use": "Unknown", "cwes": [], "epss": 0.05,
+            "epss_percentile": 0.9, "watchlist_hits": [], "notes": "",
+            "nvd_url": "https://nvd.nist.gov/vuln/detail/CVE-0000-00009",
+        }
+        base.update(changes)
+        return base
+
+    def meta(self):
+        return {"today": "2026-10-24", "days": 7, "catalog_version": "TEST",
+                "epss_status": "TEST", "watchlist": [], "test_mode": True,
+                "sentinel_version": sentinel.VERSION}
+
+    def test_outside_text_cannot_inject_code(self):
+        evil = self.finding(summary='<script>alert("x")</script>',
+                            notes="javascript:alert(1)")
+        page = sentinel.render_html(self.meta(), [evil])
+        self.assertNotIn("<script>", page)
+        self.assertIn("&lt;script&gt;", page)
+        self.assertNotIn('href="javascript:', page)
+
+    def test_verdict_sentences(self):
+        empty = {sentinel.LEVEL_ACT_NOW: 0, sentinel.LEVEL_HIGH: 0, sentinel.LEVEL_MONITOR: 3}
+        self.assertEqual(sentinel.verdict(empty)[0], "ok")
+        high = dict(empty, **{sentinel.LEVEL_HIGH: 2})
+        self.assertEqual(sentinel.verdict(high)[0], "high")
+        act = dict(high, **{sentinel.LEVEL_ACT_NOW: 1})
+        self.assertIn("1 actively exploited flaw affects", sentinel.verdict(act)[1])
 
 
 if __name__ == "__main__":
