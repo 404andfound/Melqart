@@ -118,6 +118,13 @@ class HtmlBriefingTests(unittest.TestCase):
         act = dict(high, **{sentinel.LEVEL_ACT_NOW: 1})
         self.assertIn("1 actively exploited flaw affects", sentinel.verdict(act)[1])
 
+    def test_high_sentence_grammar(self):
+        # Regression test: 2026-10-26 the banner said "1 high-risk flaw are".
+        counts = {sentinel.LEVEL_ACT_NOW: 0, sentinel.LEVEL_HIGH: 1, sentinel.LEVEL_MONITOR: 7}
+        self.assertIn("1 high-risk flaw is worth", sentinel.verdict(counts)[1])
+        counts[sentinel.LEVEL_HIGH] = 2
+        self.assertIn("2 high-risk flaws are worth", sentinel.verdict(counts)[1])
+
 
 if __name__ == "__main__":
     unittest.main()

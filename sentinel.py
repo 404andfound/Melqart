@@ -348,9 +348,9 @@ def verdict(counts: dict) -> tuple[str, str]:
         word = "flaw affects" if act == 1 else "flaws affect"
         return "act", f"{act} actively exploited {word} software you run. Act now."
     if high:
-        word = "flaw" if high == 1 else "flaws"
+        word = "flaw is" if high == 1 else "flaws are"
         return "high", (f"Nothing matches your software, but {high} high-risk "
-                        f"{word} are worth knowing about.")
+                        f"{word} worth knowing about.")
     return "ok", "Quiet morning. Nothing new affects software you run."
 
 
