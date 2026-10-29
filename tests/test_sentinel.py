@@ -126,5 +126,23 @@ class HtmlBriefingTests(unittest.TestCase):
         self.assertIn("2 high-risk flaws are worth", sentinel.verdict(counts)[1])
 
 
+
+
+class WatchlistMatchingTests(unittest.TestCase):
+    def test_short_keyword_does_not_match_inside_longer_name(self):
+        vuln = {"vendorProject": "GitLab", "product": "GitLab Community Edition"}
+        self.assertEqual(sentinel.watchlist_hits(vuln, ["git"]), [])
+
+    def test_keyword_matches_as_whole_word(self):
+        vuln = {"vendorProject": "Google", "product": "Chromium V8"}
+        self.assertEqual(sentinel.watchlist_hits(vuln, ["chromium"]), ["chromium"])
+
+    def test_dot_in_keyword_is_plain_text(self):
+        hit = {"vendorProject": "OpenJS", "product": "Node.js"}
+        miss = {"vendorProject": "Example", "product": "Nodexjs"}
+        self.assertEqual(sentinel.watchlist_hits(hit, ["node.js"]), ["node.js"])
+        self.assertEqual(sentinel.watchlist_hits(miss, ["node.js"]), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -29,6 +29,7 @@ import argparse
 import datetime as dt
 import html
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -150,7 +151,8 @@ def load_watchlist(path: Path | None) -> list[str]:
 def watchlist_hits(vuln: dict, keywords: list[str]) -> list[str]:
     """Return the watchlist keywords found in the vendor or product name."""
     haystack = f"{vuln.get('vendorProject', '')} {vuln.get('product', '')}".lower()
-    return [word for word in keywords if word in haystack]
+    return [word for word in keywords 
+        if re.search(rf"(?<![a-z0-9]){re.escape(word)}(?![a-z0-9])", haystack)]
 
 
 def classify(vuln: dict, epss: dict | None, hits: list[str], threshold: float) -> str:
