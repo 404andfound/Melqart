@@ -11,10 +11,12 @@ Update this at the end of every session, before committing.
 - [x] Real watchlist built from `winget list` inventory (2026-10-25)
 - [x] v0.2: HTML briefing with one-line verdict, opens in browser,
       outside text escaped against XSS; 10 tests (2026-10-25)
-
 - [x] v0.2: automatic morning run via Windows Task Scheduler ("Melqart
       Sentinel", daily 07:30, pythonw, runs at next login if PC was off);
       test run returned 0 (2026-10-25)
+- [x] Watchlist matching fixed: whole words only, keywords treated as
+      plain text (re.escape); 3 new tests, 14 passing (2026-10-29)
+
 
 ## Next
 - [ ] Log file for scheduled runs (pythonw hides errors)
@@ -44,9 +46,12 @@ Update this at the end of every session, before committing.
   Oct 21 security release; patched, then uninstalled as unused. Unofficial
   "Grok" chatbot app from an individual publisher removed. Attack surface
   reduced by two programs.
+- False positive in live use (2026-10-29): watchlist keyword "git"
+  matched GitLab (CVE-2026-97229) because matching was by substring.
+  Root cause in watchlist_hits(); fixed with whole-word matching.
+  GitLab correctly moved from Act now to High (EPSS 18.4%).
 
 ## Last session
-2026-10-25: VS Code installed; real watchlist; Node.js and unofficial
-chatbot removed; v0.2 HTML briefing built and run live (green, quiet
-morning); scheduled daily run set up and verified. Next: sentinel.py
-walkthrough.
+2026-10-29: Live briefing flagged GitLab as Act now; traced to substring
+matching ("git" in "gitlab"). Fixed with whole-word matching + re.escape,
+3 new tests (14 passing), committed a49687e. Next: sentinel.py walkthrough.
